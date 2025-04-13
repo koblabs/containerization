@@ -1,0 +1,56 @@
+services:
+  spark-master:
+    image: bitnami/spark:3.5.2
+    environment:
+      - SPARK_MODE=master
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+      - SPARK_USER=spark
+    ports:
+      - '8080:8080'
+    volumes:
+      - ./volume:/opt/bitnami/spark/workspace
+
+  spark-worker:
+    image: bitnami/spark:3.5.2
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark-master:7077
+      - SPARK_WORKER_MEMORY=1G
+      - SPARK_WORKER_CORES=1
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+      - SPARK_USER=spark
+    volumes:
+      - ./volume:/opt/bitnami/spark/workspace
+  
+  spark-connect:
+    image: bitnami/spark:3.5.2
+    container_name: spark-connect
+    environment:
+      - SPARK_MODE=driver
+      - SPARK_MASTER=spark://spark-master:7077
+    ports:
+      - 15002:15002
+    depends_on:
+      - spark-master
+    command: ["/bin/bash", "-c", "/opt/bitnami/spark/sbin/start-connect-server.sh --master spark://spark-master:7077 --packages org.apache.spark:spark-connect_2.12:3.5.2"]
+    volumes:
+      - ./volume:/opt/bitnami/spark/workspace
+
+  jupyter:
+    image: quay.io/jupyter/all-spark-notebook
+    restart: always
+    volumes:
+      - ./volume:/home/jovyan/work
+    environment:
+      - JUPYTER_TOKEN=token
+    ports:
+      - 88:8888
+      - 4040:4040
+    depends_on:
+      - spark-connect
