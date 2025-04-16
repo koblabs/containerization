@@ -1,0 +1,16 @@
+services:
+  threatdragon:
+    image: owasp/threat-dragon:stable
+    ports:
+      - "3030:3000"
+    depends_on:
+      - gitlab
+    env_file:
+      - ./.env
+
+  gitlab:
+    image: gitlab/gitlab-ce:latest
+    ports:
+      - "3080:80"
+    env_file:
+      - ./.env
